@@ -8,3 +8,5 @@ dados = wss.abrir_dados()
 
 
 print(wss.consultar_dados_bolsas_estudo(dados=dados))
+sleep(5)
+print(wss.consultar_dados_cursos_destaque(dados=dados))

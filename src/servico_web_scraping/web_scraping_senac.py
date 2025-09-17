@@ -5,6 +5,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.webdriver import WebDriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webelement import WebElement
 from webdriver_manager.chrome import ChromeDriverManager
 
 from src.servico_web_scraping.i_web_scraping_senac import IWebScrapingSenac
@@ -58,14 +59,41 @@ class WebScrapingSenac(IWebScrapingSenac[WebDriver]):
             print(flag)
         return lista_cursos
 
-    def mover_slide_cursos_destaque(self, dados: WebDriver) -> bool:
-        pass
+    def __mover_slide_cursos_destaque(self, dados: WebDriver):
+        elemento = dados.find_element(
+            By.ID,
+            "portlet_com_liferay_asset_publisher_web_portlet_AssetPublisherPortlet_INSTANCE_fdbrcursosOferecidos")
+        dados.execute_script("arguments[0].scrollIntoView();", elemento)
+        sleep(10)
 
-    def executar_paginacao_cursos_destaque(self, dados: WebDriver):
-        pass
+    def __executar_paginacao_cursos_destaque(self, dados: WebElement) -> bool:
+        dados.find_element(By.CLASS_NAME, "slick-next").click()
+        dados = dados.find_element(By.CLASS_NAME, "slick-next").get_attribute("aria-disabled")
+        dados = False if dados == 'true' else True
+        return dados
 
     def consultar_dados_cursos_destaque(self, dados: WebDriver) -> List[Dict[str, str]]:
-        pass
+        self.__mover_slide_cursos_destaque(dados=dados)
+        dados_destaque = dados.find_element(By.CLASS_NAME, "slick-area-estatico")
+
+        dados_cursos_destaque = dados_destaque.find_elements(
+            By.CLASS_NAME, "slick-area__item")
+        dados = True
+        lista_cursos = []
+        while dados:
+            for dado_curso in dados_cursos_destaque:
+                if dado_curso.find_element(By.TAG_NAME, "h6").text.strip():
+                    lista_cursos.append(
+                        {
+                            'titulo_curso': dado_curso.find_element(By.TAG_NAME, "h6").text.strip(),
+                            'url_curso': dado_curso.find_element(By.CLASS_NAME, "ssp-absolute-link").get_attribute(
+                                "href")
+                        }
+                    )
+
+            dados = self.__executar_paginacao_cursos_destaque(dados=dados_destaque)
+            print(dados)
+        return lista_cursos
 
     def mover_slide_cursos_proximas_turmas(self, dados: WebDriver) -> bool:
         pass
